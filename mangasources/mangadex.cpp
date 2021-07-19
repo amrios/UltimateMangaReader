@@ -230,7 +230,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
                 MangaChapter mangaChapter(chapterTitle, chapterUrl);
                 mangaChapter.chapterNumber = padChapterNumber(numChapter);
 
-                newchapters.insert(0, mangaChapter);
+                newchapters.append(mangaChapter);
             }
         }
 
