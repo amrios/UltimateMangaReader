@@ -59,39 +59,47 @@ bool MangaDex::updateMangaList(UpdateProgressToken *token)
     try
     {
         Document doc;
+        // Mangadex limits results to 10000, so a workaround is required.
+        // Our partial workaround allows us to get more entries by using status filters.
+        for (const auto &s : statuses) {
+            auto statusFilter = QString("&status[]=" + s.toLower());
+            bool isAtEnd = false;
 
-        // auto total = doc["total"].GetInt();
+            for (unsigned int i = 0; i < 10000 && !isAtEnd; i = i + 100) {
+                auto currentOffset = QString::number(i);
 
-        // The API reports that there are more than 10000 items, but offsetting past 9900 will cause a 500 error.
-        // So we are setting 10000 to the upper bound temporaily to get around this limitation.
-        for (unsigned int i = 0; i < 10000; i = i + 100) {
-            auto currentNum = QString::number(i);
-            auto job = networkManager->downloadAsString(basedictUrl + currentNum, -1);
+                auto job = networkManager->downloadAsString(basedictUrl + currentOffset + statusFilter, -1);
 
-            if (!job->await(7000))
-            {
-                token->sendError(job->errorString);
-                return false;
-            }
-            ParseResult res = doc.Parse(job->buffer.data());
-            if (!res)
-                return false;
+                if (!job->await(7000))
+                {
+                    token->sendError(job->errorString);
+                    return false;
+                }
 
-            if (doc.HasMember("result") && QString(doc["result"].GetString()) == "error")
-                return false;
-            auto results = doc["results"].GetArray();
-            for (const auto &r : results)
-            {
-            QString title;
-                if (r["data"]["attributes"]["title"].HasMember("en"))
-                    title = QString(r["data"]["attributes"]["title"]["en"].GetString());
-                else
-                    title = QString(r["data"]["attributes"]["title"]["jp"].GetString());
-                auto url = QString("/manga/") + r["data"]["id"].GetString();
-                mangas.append(title, url);
-                token->sendProgress(i % 10000 / 100);
-                qDebug() << "Retrieving " << title << " with URL " << url;
-                //                        matches++;
+                ParseResult res = doc.Parse(job->buffer.data());
+                if (!res)
+                    return false;
+
+                if (doc.HasMember("result") && QString(doc["result"].GetString()) == "error")
+                    return false;
+                auto results = doc["results"].GetArray();
+                for (const auto &r : results)
+                {
+                    QString title;
+                    if (r["data"]["attributes"]["title"].HasMember("en"))
+                        title = QString(r["data"]["attributes"]["title"]["en"].GetString());
+                    else
+                        title = QString(r["data"]["attributes"]["title"]["jp"].GetString());
+                    auto url = QString("/manga/") + r["data"]["id"].GetString();
+                    mangas.append(title, url);
+                    token->sendProgress(i % 10000 / 100);
+                    qDebug() << "Retrieving " << title << " with URL " << url;
+                    //                        matches++;
+                }
+
+                unsigned int total = doc["total"].GetInt();
+                if (i >= total-100)
+                    isAtEnd = true;
             }
         }
 
