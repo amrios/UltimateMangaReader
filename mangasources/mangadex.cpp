@@ -195,7 +195,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
         for (unsigned int i = 0; i < total; i = i + 100)
         {
             QString offset = QString::number(i);
-            jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&limit=100&offset=" + offset, -1);
+            jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&includes[]=scanlation_group&limit=100&offset=" + offset, -1);
             if (!jobChapter->await(3000))
             {
                 return Err(jobChapter->errorString);
@@ -212,12 +212,12 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
 
                 auto title = QString("");
                 auto numChapter = QString("");
+                auto scanGroup = QString("");
 
-                if (!c["data"]["attributes"]["title"].IsNull() && !c["data"]["attributes"]["chapter"].IsNull())
-                {
+                if (!c["data"]["attributes"]["title"].IsNull())
                     title = QString(c["data"]["attributes"]["title"].GetString());
+                if (!c["data"]["attributes"]["chapter"].IsNull())
                     numChapter = QString(c["data"]["attributes"]["chapter"].GetString());
-                }
 
                 auto chapterTitle = "Ch. " + numChapter + " " + title;
 
