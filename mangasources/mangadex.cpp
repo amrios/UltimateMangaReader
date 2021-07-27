@@ -90,7 +90,7 @@ bool MangaDex::updateMangaList(UpdateProgressToken *token)
                         title = QString(r["data"]["attributes"]["title"]["en"].GetString());
                     else
                         title = QString(r["data"]["attributes"]["title"]["jp"].GetString());
-                    auto url = QString("/manga/") + r["data"]["id"].GetString();
+                    auto url = QString("/manga/%1?%2").arg(r["data"]["id"].GetString()).arg("includes[]=author&includes[]=artist&includes[]=cover_art");
                     mangas.append(title, url);
                     token->sendProgress(i % 10000 / 100);
                 }
@@ -166,6 +166,23 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
 
         for (const auto &rel : rels)
         {
+            auto relation = QString(rel["type"].GetString());
+
+            if (relation.compare(QString("author")) == 0)
+                info->author = QString(rel["attributes"]["name"].GetString());
+            if (relation.compare(QString("artist")) == 0)
+                info->artist = QString(rel["attributes"]["name"].GetString());
+            if (relation.compare(QString("cover_art")) == 0)
+            {
+                info->coverUrl = QString("https://uploads.mangadex.org/covers/%1/%2.256.jpg")
+                                     .arg(doc["data"]["id"].GetString(),
+                                          rel["attributes"]["fileName"].GetString());
+            }
+
+        }
+/*
+        for (const auto &rel : rels)
+        {
             auto id = QString(rel["id"].GetString());
             qDebug() << id << rel["type"].GetString();
 
@@ -187,6 +204,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
             }
 
         }
+        */
         Document chDoc;
         auto id = QString(doc["data"]["id"].GetString());
         auto jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&limit=100", -1);
@@ -236,7 +254,6 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
                 newchapters.append(mangaChapter);
             }
         }
-
 
 
         //        auto &chaptersObject = doc["chapter"];
