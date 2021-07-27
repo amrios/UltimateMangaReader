@@ -205,6 +205,10 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
             auto chaptersArr = chDoc["results"].GetArray();
             for (const auto &c : chaptersArr)
             {
+
+                if (c["data"]["attributes"]["translatedLanguage"].IsNull())
+                    continue;
+
                 auto language = QString(c["data"]["attributes"]["translatedLanguage"].GetString());
 
                 if (language != "en")
@@ -212,12 +216,12 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
 
                 auto title = QString("");
                 auto numChapter = QString("");
-                auto scanGroup = QString("");
 
                 if (!c["data"]["attributes"]["title"].IsNull())
                     title = QString(c["data"]["attributes"]["title"].GetString());
                 if (!c["data"]["attributes"]["chapter"].IsNull())
                     numChapter = QString(c["data"]["attributes"]["chapter"].GetString());
+
 
                 auto chapterTitle = "Ch. " + numChapter + " " + title;
 
