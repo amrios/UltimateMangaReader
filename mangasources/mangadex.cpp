@@ -180,31 +180,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
             }
 
         }
-/*
-        for (const auto &rel : rels)
-        {
-            auto id = QString(rel["id"].GetString());
-            qDebug() << id << rel["type"].GetString();
 
-            if (QString(rel["type"].GetString()) == "cover_art")
-            {
-                auto jobCover = networkManager->downloadAsString("https://api.mangadex.org/cover/" + id, -1);
-
-                if (jobCover->await(3000))
-                {
-                    Document coverdoc;
-                    ParseResult cres = coverdoc.Parse(jobCover->buffer.data());
-                    if (cres)
-                    {
-                        info->coverUrl = QString("https://uploads.mangadex.org/covers/%1/%2.256.jpg")
-                                             .arg(doc["data"]["id"].GetString(),
-                                                  coverdoc["data"]["attributes"]["fileName"].GetString());
-                    }
-                }
-            }
-
-        }
-        */
         Document chDoc;
         auto id = QString(doc["data"]["id"].GetString());
         auto jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&limit=100", -1);
