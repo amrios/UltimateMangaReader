@@ -93,8 +93,6 @@ bool MangaDex::updateMangaList(UpdateProgressToken *token)
                     auto url = QString("/manga/") + r["data"]["id"].GetString();
                     mangas.append(title, url);
                     token->sendProgress(i % 10000 / 100);
-                    qDebug() << "Retrieving " << title << " with URL " << url;
-                    //                        matches++;
                 }
 
                 unsigned int total = doc["total"].GetInt();
@@ -170,6 +168,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
         {
             auto id = QString(rel["id"].GetString());
             qDebug() << id << rel["type"].GetString();
+
             if (QString(rel["type"].GetString()) == "cover_art")
             {
                 auto jobCover = networkManager->downloadAsString("https://api.mangadex.org/cover/" + id, -1);
@@ -191,27 +190,24 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
         Document chDoc;
         auto id = QString(doc["data"]["id"].GetString());
         auto jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&limit=100", -1);
-        if (jobChapter->await(3000))
+        if (!jobChapter->await(3000))
         {
-            ParseResult pResult = chDoc.Parse(jobChapter->buffer.data());
-            if (!pResult)
-                qDebug() << "Chapter job is null";
+            return Err(jobChapter->errorString);
         }
 
+        chDoc.Parse(jobChapter->buffer.data());
         unsigned int total = chDoc["total"].GetInt();
 
         for (unsigned int i = 0; i < total; i = i + 100)
         {
             QString offset = QString::number(i);
             jobChapter = networkManager->downloadAsString("https://api.mangadex.org/chapter?manga=" + id + "&limit=100&offset=" + offset, -1);
-            if (jobChapter->await(3000))
+            if (!jobChapter->await(3000))
             {
-                ParseResult pResult = chDoc.Parse(jobChapter->buffer.data());
-                if (!pResult)
-                    qDebug() << "Chapter job is null";
+                return Err(jobChapter->errorString);
             }
 
-
+            chDoc.Parse(jobChapter->buffer.data());
             auto chaptersArr = chDoc["results"].GetArray();
             for (const auto &c : chaptersArr)
             {
@@ -233,7 +229,6 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
 
                 auto chapterKey = QString(c["data"]["id"].GetString());
                 auto chapterUrl = QString("https://api.mangadex.org/chapter/" + chapterKey);
-                qDebug() << "Mangadex: Adding chapter " << chapterTitle << "with URL " << chapterUrl;
 
                 MangaChapter mangaChapter(chapterTitle, chapterUrl);
                 mangaChapter.chapterNumber = padChapterNumber(numChapter);
@@ -272,10 +267,6 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
     {
         return Err(QString("Coulnd't parse mangainfos.2"));
     }
-    //    qDebug() << "Mangadex update:" << t.elapsed() << info->title;
-
-    //    std::sort(newchapters.begin(), newchapters.end(),
-    //              [](auto a, auto b) { return a.chapterNumber < b.chapterNumber; });
 
     return Ok(newchapters);
 }
