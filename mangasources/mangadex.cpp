@@ -157,7 +157,7 @@ Result<MangaChapterCollection, QString> MangaDex::updateMangaInfoFinishedLoading
         if (mangaObject.HasMember("year") && !mangaObject["year"].IsNull())
             info->releaseYear = QString(mangaObject["year"].GetString());
 
-        if (mangaObject.HasMember("publicationDemographic"))
+        if (mangaObject.HasMember("publicationDemographic") && !mangaObject["publicationDemographic"].IsNull())
             info->genres = QString(mangaObject["publicationDemographic"].GetString());
 
         info->summary = htmlToPlainText(QString(mangaObject["description"]["en"].GetString())).remove(bbrx);
